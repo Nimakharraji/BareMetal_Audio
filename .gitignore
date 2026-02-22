@@ -1,0 +1,96 @@
+# --- Miscellaneous ---
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# --- IntelliJ / Android Studio ---
+*.iml
+*.ipr
+*.iws
+.idea/
+modules.xml
+
+# --- VS Code ---
+.vscode/
+# If you want to share launch configs, uncomment the line above and explicitly ignore specific files like:
+# .vscode/settings.json
+
+# --- Flutter / Dart ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+# For libraries/packages, pubspec.lock SHOULD be ignored.
+# For apps, it should be committed. Since this is a plugin:
+pubspec.lock
+doc/api/
+
+# --- Android Native (Gradle & CMake) ---
+# Gradle cache & build dirs
+.gradle/
+**/android/app/build/
+**/android/.gradle/
+
+# CMake / C++ Build Artifacts (CRITICAL for your engine)
+.cxx/
+.externalNativeBuild/
+android/.cxx/
+android/.externalNativeBuild/
+cmake-build-debug/
+cmake-build-release/
+obj/
+libs/
+*.so
+*.o
+*.a
+
+# Local configuration file (SDK path, etc.)
+local.properties
+
+# --- iOS / macOS Native (CocoaPods & Xcode) ---
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# CocoaPods
+**/ios/Pods/
+**/macos/Pods/
+**/ios/.symlinks/
+**/macos/.symlinks/
+Podfile.lock
+
+# Xcode
+**/ios/*.mode1v3
+**/ios/*.mode2v3
+**/ios/*.moved-aside
+**/ios/*.pbxuser
+**/ios/*.perspectivev3
+**/ios/*.t1
+**/ios/*.t2
+**/ios/*.xccheckout
+**/ios/*.xcworkspace
+**/ios/xcuserdata/
+**/macos/xcuserdata/
+
+# --- Windows Native ---
+**/windows/flutter/ephemeral/
+**/windows/runner/resources/
+*.exe
+*.dll
+*.lib
+*.exp
+
+# --- Linux Native ---
+**/linux/flutter/ephemeral/

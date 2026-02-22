@@ -1,0 +1,30 @@
+name: baremetal_audio_example
+description: Demonstrates the Baremetal DSP Audio engine capabilities.
+publish_to: 'none' # This is an example app, not a package.
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- LOCAL PACKAGE LINKING ---
+  baremetal_audio:
+    path: ../
+
+  # Useful for testing Playback Mode (accessing local files)
+  path_provider: ^2.0.15
+  permission_handler: ^11.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/test_audio.mp3
