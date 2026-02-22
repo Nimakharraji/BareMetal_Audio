@@ -64,7 +64,6 @@ class DspBridge {
         throw UnsupportedError('OS not supported.');
       }
     } catch (e) {
-      print("CRITICAL ERROR LOADING DLL: $e");
       rethrow;
     }
   }

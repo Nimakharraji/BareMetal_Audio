@@ -8,9 +8,11 @@
 #include <cstring>
 
 const float PI = 3.14159265358979323846f;
+
+// --- GLOBAL INSTANCE ---
+// این آبجکت هرگز پاک نمی‌شود تا از Race Condition جلوگیری شود
 static DSPEngine *global_engine = nullptr;
 
-// Helper: Timestamp Parsing
 double parseTimestamp(const std::string &timestamp)
 {
     int h, m, s, ms;
@@ -20,13 +22,10 @@ double parseTimestamp(const std::string &timestamp)
     return (h * 3600.0) + (m * 60.0) + s + (ms / 1000.0);
 }
 
-// Global Callback Wrapper
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
-    // Safety Check: اگر انجین یا دیتای ورودی نال بود، هیچ کاری نکن (جلوگیری از کرش)
     if (pDevice->pUserData == nullptr)
         return;
-
     DSPEngine *engine = static_cast<DSPEngine *>(pDevice->pUserData);
     engine->onAudioData(pOutput, pInput, frameCount);
 }
@@ -49,6 +48,13 @@ void DSPEngine::start(int mode, const char *filePath)
     if (isRunning.load())
         return;
 
+    // Reset State
+    totalFramesProcessed.store(0);
+    currentSubtitleIdx.store(-1);
+    bufferIndex = 0;
+    std::fill_n(sampleBuffer, FFT_SIZE, 0.0f);
+    std::fill_n(fftMagnitudes, FFT_BINS, 0.0f);
+
     currentMode = (mode == 1) ? EngineMode::PLAYBACK : EngineMode::CAPTURE;
 
     ma_device_config config;
@@ -68,28 +74,25 @@ void DSPEngine::start(int mode, const char *filePath)
             return;
         }
 
+        // Seek safe check
+        if (decoder)
+            ma_decoder_seek_to_pcm_frame(decoder, 0);
+
         config = ma_device_config_init(ma_device_type_playback);
         config.playback.format = ma_format_f32;
         config.playback.channels = 1;
     }
     else
     {
-        // Capture Mode (Microphone)
         config = ma_device_config_init(ma_device_type_capture);
         config.capture.format = ma_format_f32;
         config.capture.channels = 1;
-
-        // --- FIX FOR CRASH ---
-        // Android requires specific buffer alignment.
-        // We REMOVE the forced period size so Miniaudio can choose the device's native buffer size.
-        // config.periodSizeInFrames = 256;  <-- THIS CAUSED THE CRASH
+        // نکته: اینجا periodSize را ست نمی‌کنیم تا لگ نزند، اما در callback بافر را کنترل می‌کنیم
     }
 
     config.sampleRate = SAMPLE_RATE;
     config.dataCallback = data_callback;
     config.pUserData = this;
-
-    // Use default backend logic (usually AAudio on Android 8+)
 
     device = new ma_device();
     if (ma_device_init(NULL, &config, device) != MA_SUCCESS)
@@ -105,9 +108,16 @@ void DSPEngine::start(int mode, const char *filePath)
         return;
     }
 
-    totalFramesProcessed.store(0);
-    ma_device_start(device);
-    isRunning.store(true);
+    if (ma_device_start(device) == MA_SUCCESS)
+    {
+        isRunning.store(true);
+    }
+    else
+    {
+        ma_device_uninit(device);
+        delete device;
+        device = nullptr;
+    }
 }
 
 void DSPEngine::stop()
@@ -134,11 +144,21 @@ void DSPEngine::stop()
 
 void DSPEngine::onAudioData(void *pOutput, const void *pInput, uint32_t frameCount)
 {
-    float tempBuffer[4096];
+    // --- CRITICAL CRASH FIX: BUFFER OVERFLOW PROTECTION ---
+    // گوشی‌های شیائومی ممکن است بافرهای بسیار بزرگ بفرستند.
+    // اگر فریم بیشتر از 16384 باشد، آن را محدود کن یا نادیده بگیر تا Stack Overflow نشود.
+    if (frameCount > 16384)
+        return;
+
+    // بافر بسیار بزرگ برای اطمینان
+    float tempBuffer[16384];
     const float *signalSource = nullptr;
 
     if (currentMode == EngineMode::PLAYBACK)
     {
+        if (!decoder)
+            return; // Paranoia check
+
         ma_uint64 framesRead;
         ma_decoder_read_pcm_frames(decoder, tempBuffer, frameCount, &framesRead);
 
@@ -152,8 +172,6 @@ void DSPEngine::onAudioData(void *pOutput, const void *pInput, uint32_t frameCou
     }
     else
     {
-        // Capture Mode
-        // FIX: Check if input is valid before reading
         if (pInput == nullptr)
             return;
         signalSource = (const float *)pInput;
@@ -168,7 +186,6 @@ void DSPEngine::onAudioData(void *pOutput, const void *pInput, uint32_t frameCou
 void DSPEngine::processSignal(const float *buffer, uint32_t frames)
 {
     float gain = masterGain.load(std::memory_order_relaxed);
-
     uint64_t total = totalFramesProcessed.fetch_add(frames, std::memory_order_relaxed);
     syncSubtitles((double)total / SAMPLE_RATE);
 
@@ -176,8 +193,7 @@ void DSPEngine::processSignal(const float *buffer, uint32_t frames)
     for (uint32_t i = 0; i < frames; ++i)
     {
         float s = buffer[i] * gain;
-
-        float f = s - prevInput + R * prevOutput;
+        float f = s - prevInput + 0.995f * prevOutput;
         prevInput = s;
         prevOutput = f;
         sumSq += f * f;
@@ -191,8 +207,6 @@ void DSPEngine::processSignal(const float *buffer, uint32_t frames)
     }
     currentRms.store(std::sqrt(sumSq / frames), std::memory_order_relaxed);
 }
-
-// ... (Subtitles and FFT logic remains the same) ...
 
 void DSPEngine::loadSubtitles(const char *srtContent)
 {
@@ -243,11 +257,14 @@ void DSPEngine::syncSubtitles(double timestamp)
     if (subtitles.empty())
         return;
     int32_t current = currentSubtitleIdx.load(std::memory_order_relaxed);
+
+    // Optimization: Check current first
     if (current >= 0 && current < (int32_t)subtitles.size())
     {
         if (timestamp >= subtitles[current].startTime && timestamp <= subtitles[current].endTime)
             return;
     }
+
     auto it = std::upper_bound(subtitles.begin(), subtitles.end(), timestamp,
                                [](double val, const SubtitleEvent &e)
                                { return val < e.startTime; });
@@ -273,6 +290,10 @@ void DSPEngine::computeFFT()
         float win = 0.5f * (1.0f - std::cos(2.0f * PI * i / (FFT_SIZE - 1)));
         data[i] = std::complex<float>(sampleBuffer[i] * win, 0.0f);
     }
+
+    // Bit reversal & Butterfly (FFT implementation omitted for brevity, same as before)
+    // ... [کد FFT دقیقاً مثل قبل است، تغییری نداده‌ام چون درست بود] ...
+    // برای اطمینان کد کامل FFT را می‌گذارم:
     for (int i = 1, j = 0; i < FFT_SIZE; i++)
     {
         int bit = FFT_SIZE >> 1;
@@ -302,38 +323,22 @@ void DSPEngine::computeFFT()
         fftMagnitudes[i] = std::abs(data[i]) / (FFT_SIZE / 2.0f);
 }
 
-// --- Getters / Setters ---
-float DSPEngine::getRms() { return currentRms.load(std::memory_order_relaxed); }
-float *DSPEngine::getFftData() { return fftMagnitudes; }
-double DSPEngine::getCurrentTime() const
-{
-    return (double)totalFramesProcessed.load(std::memory_order_relaxed) / (double)SAMPLE_RATE;
-}
-void DSPEngine::setMasterGain(float gain) { masterGain.store(gain, std::memory_order_relaxed); }
-int32_t DSPEngine::getActiveSubtitleIndex() const { return currentSubtitleIdx.load(std::memory_order_relaxed); }
-const char *DSPEngine::getSubtitleText(int32_t index) const
-{
-    if (index >= 0 && index < (int32_t)subtitles.size())
-        return subtitles[index].text.c_str();
-    return "";
-}
-
-// --- EXPORTS ---
+// --- SAFE EXPORTS ---
 EXPORT void init_engine(int mode, const char *file_path)
 {
     if (!global_engine)
         global_engine = new DSPEngine();
+    global_engine->stop(); // Reset old state
     global_engine->start(mode, file_path);
 }
+
 EXPORT void stop_engine()
 {
     if (global_engine)
-    {
         global_engine->stop();
-        delete global_engine;
-        global_engine = nullptr;
-    }
+    // NEVER DELETE global_engine
 }
+
 EXPORT float get_rms_level() { return global_engine ? global_engine->getRms() : 0.0f; }
 EXPORT float *get_fft_array() { return global_engine ? global_engine->getFftData() : nullptr; }
 EXPORT void set_gain(float g)

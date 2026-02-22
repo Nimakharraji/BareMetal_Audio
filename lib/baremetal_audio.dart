@@ -56,7 +56,6 @@ class BaremetalAudio {
       try {
         _lib = ffi.DynamicLibrary.open("libbaremetal_audio.so");
       } catch (e) {
-        print("ERROR LOADING SO: $e");
         rethrow;
       }
     } else if (Platform.isIOS) {
@@ -80,7 +79,6 @@ class BaremetalAudio {
       _getSubText = _lib.lookupFunction<GetSubTextNative, GetSubTextDart>("get_subtitle_text");
       _getTime = _lib.lookupFunction<GetTimeNative, GetTimeDart>("get_media_time");
     } catch (e) {
-      print("ERROR LINKING SYMBOLS: $e");
       rethrow;
     }
   }

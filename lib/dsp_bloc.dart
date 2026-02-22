@@ -83,7 +83,7 @@ class DspBloc extends Bloc<DspEvent, DspState> {
       
 
       // Windows Example: "C:\\Music\\track.mp3"
-      final String testFilePath = "C:\\Users\\RSKALA\\Downloads\\example222.mp3"; 
+      const String testFilePath = "C:\\Users\\RSKALA\\Downloads\\example222.mp3"; 
 
       // Initialize Engine in Mode 1 (Playback)
       // This will decode the file, play it to speakers, and analyze it.
