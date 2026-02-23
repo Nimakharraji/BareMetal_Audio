@@ -8,9 +8,9 @@ class DspState {
   final bool isRunning;
   final double rmsLevel;
   final List<double> fftData; // 512 frequency bins
-  final double mediaTime;     // Sample-accurate clock from C++
-  final String subtitleText;  // Current active subtitle
-  final double masterGain;    // Current gain (0.0 - 1.0)
+  final double mediaTime; // Sample-accurate clock from C++
+  final String subtitleText; // Current active subtitle
+  final double masterGain; // Current gain (0.0 - 1.0)
 
   const DspState({
     required this.isRunning,
@@ -54,11 +54,14 @@ class DspState {
 
 // --- Events ---
 abstract class DspEvent {}
+
 class ToggleEngine extends DspEvent {}
+
 class SetGain extends DspEvent {
   final double gain;
   SetGain(this.gain);
 }
+
 class _UpdateTelemetry extends DspEvent {}
 
 // --- BLoC Implementation ---
@@ -80,15 +83,15 @@ class DspBloc extends Bloc<DspEvent, DspState> {
       emit(DspState.initial());
     } else {
       // --- STARTUP LOGIC: MODE 1 (PLAYBACK) ---
-      
 
       // Windows Example: "C:\\Music\\track.mp3"
-      const String testFilePath = "C:\\Users\\RSKALA\\Downloads\\example222.mp3"; 
+      const String testFilePath =
+          "C:\\Users\\RSKALA\\Downloads\\example222.mp3";
 
       // Initialize Engine in Mode 1 (Playback)
       // This will decode the file, play it to speakers, and analyze it.
       _bridge.initEngine(mode: 1, filePath: testFilePath);
-      
+
       // --- INJECT SYNC TEST SUBTITLES ---
       // These timestamps will match the audio file's playback time
       const mockSrt = """
@@ -114,7 +117,7 @@ READY FOR IOS DEPLOYMENT
       _telemetryTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
         add(_UpdateTelemetry());
       });
-      
+
       emit(state.copyWith(isRunning: true));
     }
   }
@@ -129,14 +132,14 @@ READY FOR IOS DEPLOYMENT
 
     // 1. Fetch RMS Level
     final double level = _bridge.getRmsLevel();
-    
+
     // 2. Fetch Media Time (Driven by Audio Samples)
     final double time = _bridge.getMediaTime();
 
     // 3. Fetch FFT Data (Direct Pointer Access)
     final ffi.Pointer<ffi.Float> ptr = _bridge.getFftArray();
-    List<double> currentFft = state.fftData; 
-    
+    List<double> currentFft = state.fftData;
+
     if (ptr != ffi.nullptr) {
       // Fast copy from C heap to Dart heap for rendering
       currentFft = List<double>.from(ptr.asTypedList(512));
@@ -160,7 +163,7 @@ READY FOR IOS DEPLOYMENT
   @override
   Future<void> close() {
     _telemetryTimer?.cancel();
-    _bridge.stopEngine(); 
+    _bridge.stopEngine();
     return super.close();
   }
 }

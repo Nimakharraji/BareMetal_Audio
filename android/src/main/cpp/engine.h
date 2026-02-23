@@ -6,24 +6,19 @@
 #include <string>
 #include <cstdint>
 
-// Forward Declarations for Miniaudio structs
+// Forward Declarations
 struct ma_device;
 struct ma_decoder;
 
-// --- EXPORT MACRO ---
 #if defined(_WIN32)
     #define EXPORT extern "C" __declspec(dllexport)
 #else
     #define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #endif
 
-// --- CONSTANTS ---
 #define FFT_SIZE 1024
 #define FFT_BINS (FFT_SIZE / 2)
-
-// CRITICAL FIX: Android Hardware Native Rate is 48000Hz.
-// Setting this to 48000 prevents the 2.7s vs 3.0s drift.
-#define SAMPLE_RATE 48000 
+#define SAMPLE_RATE 48000
 
 enum class EngineMode {
     IDLE = -1,
@@ -54,7 +49,7 @@ public:
     int32_t getActiveSubtitleIndex() const;
     const char* getSubtitleText(int32_t index) const;
 
-    // Internal callback for Miniaudio wrapper
+    // Internal callback
     void onAudioData(void* pOutput, const void* pInput, uint32_t frameCount);
 
 private:
@@ -72,7 +67,7 @@ private:
     std::vector<SubtitleEvent> subtitles;
     std::atomic<int32_t> currentSubtitleIdx;
 
-    // DSP State (High-pass / Smoothing)
+    // DSP State
     float prevInput;
     float prevOutput;
     const float R = 0.995f;
@@ -87,7 +82,7 @@ private:
     void processSignal(const float* buffer, uint32_t frames);
 };
 
-// --- FFI Exports for Dart ---
+// --- FFI Exports ---
 EXPORT void init_engine(int mode, const char* file_path);
 EXPORT void stop_engine();
 EXPORT float get_rms_level();

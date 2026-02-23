@@ -32,5 +32,3 @@ flutter:
       android:
         package: com.example.baremetal_audio
         pluginClass: BaremetalAudioPlugin
-      ios:
-        pluginClass: BaremetalAudioPlugin

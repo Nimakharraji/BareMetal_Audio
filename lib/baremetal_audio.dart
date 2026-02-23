@@ -35,9 +35,9 @@ enum EngineMode { capture, playback }
 class BaremetalAudio {
   static final BaremetalAudio _instance = BaremetalAudio._internal();
   factory BaremetalAudio() => _instance;
-  
+
   late ffi.DynamicLibrary _lib;
-  
+
   // Function Pointers
   late InitEngineDart _initEngine;
   late StopEngineDart _stopEngine;
@@ -60,24 +60,30 @@ class BaremetalAudio {
       }
     } else if (Platform.isIOS) {
       // iOS statically links via CocoaPods/Xcode
-      _lib = ffi.DynamicLibrary.process(); 
+      _lib = ffi.DynamicLibrary.process();
     } else if (Platform.isWindows) {
-       _lib = ffi.DynamicLibrary.open("baremetal_audio.dll");
+      _lib = ffi.DynamicLibrary.open("baremetal_audio.dll");
     } else {
-       throw UnsupportedError("Platform not supported");
+      throw UnsupportedError("Platform not supported");
     }
 
     // 2. Lookup Symbols (Link Dart functions to C++ functions)
     try {
-      _initEngine = _lib.lookupFunction<InitEngineNative, InitEngineDart>("init_engine");
-      _stopEngine = _lib.lookupFunction<StopEngineNative, StopEngineDart>("stop_engine");
+      _initEngine =
+          _lib.lookupFunction<InitEngineNative, InitEngineDart>("init_engine");
+      _stopEngine =
+          _lib.lookupFunction<StopEngineNative, StopEngineDart>("stop_engine");
       _getRms = _lib.lookupFunction<GetRmsNative, GetRmsDart>("get_rms_level");
       _getFft = _lib.lookupFunction<GetFftNative, GetFftDart>("get_fft_array");
       _setGain = _lib.lookupFunction<SetGainNative, SetGainDart>("set_gain");
-      _loadSubs = _lib.lookupFunction<LoadSubsNative, LoadSubsDart>("load_subtitles");
-      _getSubIdx = _lib.lookupFunction<GetSubIdxNative, GetSubIdxDart>("get_subtitle_index");
-      _getSubText = _lib.lookupFunction<GetSubTextNative, GetSubTextDart>("get_subtitle_text");
-      _getTime = _lib.lookupFunction<GetTimeNative, GetTimeDart>("get_media_time");
+      _loadSubs =
+          _lib.lookupFunction<LoadSubsNative, LoadSubsDart>("load_subtitles");
+      _getSubIdx = _lib
+          .lookupFunction<GetSubIdxNative, GetSubIdxDart>("get_subtitle_index");
+      _getSubText = _lib.lookupFunction<GetSubTextNative, GetSubTextDart>(
+          "get_subtitle_text");
+      _getTime =
+          _lib.lookupFunction<GetTimeNative, GetTimeDart>("get_media_time");
     } catch (e) {
       rethrow;
     }

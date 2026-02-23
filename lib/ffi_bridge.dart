@@ -4,7 +4,8 @@ import 'package:ffi/ffi.dart';
 
 // --- C++ Signatures (Updated) ---
 // الان init_engine دو ورودی دارد: Mode (int) و Path (char*)
-typedef InitEngineNative = ffi.Void Function(ffi.Int32 mode, ffi.Pointer<Utf8> path);
+typedef InitEngineNative = ffi.Void Function(
+    ffi.Int32 mode, ffi.Pointer<Utf8> path);
 typedef InitEngineDart = void Function(int mode, ffi.Pointer<Utf8> path);
 
 typedef StopEngineNative = ffi.Void Function();
@@ -36,7 +37,7 @@ class DspBridge {
   factory DspBridge() => _instance;
 
   late final ffi.DynamicLibrary _nativeLib;
-  
+
   late final InitEngineDart _initEngineNative;
   late final StopEngineDart _stopEngineNative;
   late final GetRmsDart _getRmsLevelNative;
@@ -69,15 +70,25 @@ class DspBridge {
   }
 
   void _bindSignatures() {
-    _initEngineNative = _nativeLib.lookupFunction<InitEngineNative, InitEngineDart>('init_engine');
-    _stopEngineNative = _nativeLib.lookupFunction<StopEngineNative, StopEngineDart>('stop_engine');
-    _getRmsLevelNative = _nativeLib.lookupFunction<GetRmsNative, GetRmsDart>('get_rms_level');
-    _getFftArrayNative = _nativeLib.lookupFunction<GetFftNative, GetFftDart>('get_fft_array');
-    _setGainNative = _nativeLib.lookupFunction<SetGainNative, SetGainDart>('set_gain');
-    _loadSubtitlesNative = _nativeLib.lookupFunction<LoadSubtitlesNative, LoadSubtitlesDart>('load_subtitles');
-    _getSubtitleIndexNative = _nativeLib.lookupFunction<GetSubIdxNative, GetSubIdxDart>('get_subtitle_index');
-    _getSubtitleTextNative = _nativeLib.lookupFunction<GetSubTextNative, GetSubTextDart>('get_subtitle_text');
-    _getMediaTimeNative = _nativeLib.lookupFunction<GetTimeNative, GetTimeDart>('get_media_time');
+    _initEngineNative = _nativeLib
+        .lookupFunction<InitEngineNative, InitEngineDart>('init_engine');
+    _stopEngineNative = _nativeLib
+        .lookupFunction<StopEngineNative, StopEngineDart>('stop_engine');
+    _getRmsLevelNative =
+        _nativeLib.lookupFunction<GetRmsNative, GetRmsDart>('get_rms_level');
+    _getFftArrayNative =
+        _nativeLib.lookupFunction<GetFftNative, GetFftDart>('get_fft_array');
+    _setGainNative =
+        _nativeLib.lookupFunction<SetGainNative, SetGainDart>('set_gain');
+    _loadSubtitlesNative =
+        _nativeLib.lookupFunction<LoadSubtitlesNative, LoadSubtitlesDart>(
+            'load_subtitles');
+    _getSubtitleIndexNative = _nativeLib
+        .lookupFunction<GetSubIdxNative, GetSubIdxDart>('get_subtitle_index');
+    _getSubtitleTextNative = _nativeLib
+        .lookupFunction<GetSubTextNative, GetSubTextDart>('get_subtitle_text');
+    _getMediaTimeNative =
+        _nativeLib.lookupFunction<GetTimeNative, GetTimeDart>('get_media_time');
   }
 
   // --- PUBLIC API ---
@@ -90,7 +101,7 @@ class DspBridge {
       calloc.free(ptr);
     }
   }
-  
+
   void stopEngine() => _stopEngineNative();
   double getRmsLevel() => _getRmsLevelNative();
   ffi.Pointer<ffi.Float> getFftArray() => _getFftArrayNative();
