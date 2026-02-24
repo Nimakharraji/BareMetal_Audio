@@ -4,14 +4,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'ffi_bridge.dart';
 
 // --- State Definition ---
-class DspState {
-  final bool isRunning;
-  final double rmsLevel;
-  final List<double> fftData; // 512 frequency bins
-  final double mediaTime; // Sample-accurate clock from C++
-  final String subtitleText; // Current active subtitle
-  final double masterGain; // Current gain (0.0 - 1.0)
 
+/// Represents the current state of the DSP Engine across the UI.
+class DspState {
+  /// Whether the native engine is currently actively processing audio.
+  final bool isRunning;
+  /// The current volume magnitude (Root Mean Square).
+  final double rmsLevel;
+  /// Array containing the current magnitude of 512 frequency bins.
+  final List<double> fftData;
+  /// High-precision timeline clock driven by audio sample rate.
+  final double mediaTime;
+  /// The text string of the subtitle meant to be displayed at this exact frame.
+  final String subtitleText;
+  /// The current global audio multiplier.
+  final double masterGain;
+
+  /// Creates a complete snapshot of the DSP parameters.
   const DspState({
     required this.isRunning,
     required this.rmsLevel,
@@ -21,7 +30,7 @@ class DspState {
     required this.masterGain,
   });
 
-  // Factory for initial state
+  /// Factory constructor providing the default baseline state.
   factory DspState.initial() {
     return DspState(
       isRunning: false,
@@ -33,6 +42,7 @@ class DspState {
     );
   }
 
+  /// Creates a copy of the state with specific overridden parameters.
   DspState copyWith({
     bool? isRunning,
     double? rmsLevel,
@@ -53,22 +63,35 @@ class DspState {
 }
 
 // --- Events ---
+
+/// Base abstract event class for the DSP BLoC architecture.
 abstract class DspEvent {}
 
+/// Toggles the engine processing state (Starts/Stops the native C++ thread).
 class ToggleEngine extends DspEvent {}
 
+/// Updates the master gain configuration inside the native engine.
 class SetGain extends DspEvent {
+  /// Gain multiplier to apply.
   final double gain;
+  
+  /// Dispatches a new gain calculation to the engine.
   SetGain(this.gain);
 }
 
+// Internal telemetry trigger
 class _UpdateTelemetry extends DspEvent {}
 
 // --- BLoC Implementation ---
+
+/// Business Logic Component bridging the native C++ FFI state to Flutter UI.
+/// 
+/// Runs a high-performance 60FPS loop querying telemetry directly from memory.
 class DspBloc extends Bloc<DspEvent, DspState> {
   final DspBridge _bridge;
   Timer? _telemetryTimer;
 
+  /// Initializes the BLoC and binds the event handlers.
   DspBloc(this._bridge) : super(DspState.initial()) {
     on<ToggleEngine>(_onToggleEngine);
     on<_UpdateTelemetry>(_onUpdateTelemetry);
