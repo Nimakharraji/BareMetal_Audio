@@ -1,6 +1,6 @@
 name: baremetal_audio
 description: A high-performance, lock-free audio DSP engine using C++17 and Miniaudio via Dart FFI.
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/Nimakharraji/BareMetal_Audio
 repository: https://github.com/Nimakharraji/BareMetal_Audio
 issue_tracker: https://github.com/Nimakharraji/BareMetal_Audio/issues

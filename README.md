@@ -23,7 +23,7 @@ Designed for real-time visualization, sample-accurate playback, and zero-latency
 ## 📸 Demo
 
 <p align="center">
-  <img src="screenshots/demo_capture.gif" alt="Microphone Visualizer" width="45%" style="margin-right: 10px;">
+  <  <img src="https://raw.githubusercontent.com/Nimakharraji/BareMetal_Audio/main/screenshots/demo_capture.gif" alt="Microphone Visualizer" width="45%" style="margin-right: 10p">
 </p>
 
 ---
@@ -34,7 +34,7 @@ Add `baremetal_audio` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  baremetal_audio: ^1.0.2
+  baremetal_audio: ^1.0.3
 ```
 
 ### Android Setup

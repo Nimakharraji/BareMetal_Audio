@@ -1,3 +1,7 @@
+## 1.0.3
+
+* **Documentation:** Fixed broken GIF previews on pub.dev by migrating from relative local paths to absolute GitHub raw URLs.
+
 ## 1.0.2
 
 * **Documentation:** Added comprehensive DartDoc comments (`///`) to 100% of the public API (classes, methods, and typedefs) to achieve maximum `pub.dev` score.
