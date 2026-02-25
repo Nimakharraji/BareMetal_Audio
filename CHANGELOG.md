@@ -1,3 +1,8 @@
+## 1.0.2
+
+* **Documentation:** Added comprehensive DartDoc comments (`///`) to 100% of the public API (classes, methods, and typedefs) to achieve maximum `pub.dev` score.
+* **Dependencies:** Updated `flutter_bloc` to `^9.1.1` and `equatable` to `^2.0.8` to support the latest stable versions and resolve dependency constraint penalties.
+
 ## 1.0.1
 
 Documentation update: Improved formatting in README.md.
